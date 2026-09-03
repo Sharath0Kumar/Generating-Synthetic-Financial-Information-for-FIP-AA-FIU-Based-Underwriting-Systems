@@ -1,0 +1,49 @@
+{
+    "A1": {
+        "income": {
+            "min": 15000,
+            "max": 25000
+        },
+        "expense_ratios": {
+            "housing": 0.25,
+            "food": 0.20,
+            "utilities": 0.08,
+            "transport": 0.08,
+            "debt": 0.08,
+            "discretionary": 0.07,
+            "investment": 0.04
+        }
+    },
+
+    "A2": {
+        "income": {
+            "min": 25000,
+            "max": 60000
+        },
+        "expense_ratios": {
+            "housing": 0.25,
+            "food": 0.15,
+            "utilities": 0.07,
+            "transport": 0.08,
+            "debt": 0.10,
+            "discretionary": 0.12,
+            "investment": 0.10
+        }
+    },
+
+    "A3": {
+        "income": {
+            "min": 20000,
+            "max": 60000
+        },
+        "expense_ratios": {
+            "housing": 0.20,
+            "food": 0.15,
+            "utilities": 0.07,
+            "transport": 0.10,
+            "debt": 0.08,
+            "discretionary": 0.10,
+            "investment": 0.05
+        }
+    }
+}

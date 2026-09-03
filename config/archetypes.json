@@ -1,0 +1,169 @@
+{
+  "version": "0.1",
+  "description": "Initial customer archetype definitions for synthetic financial information generation.",
+
+  "archetypes": [
+    {
+      "archetype_id": "A1",
+      "name": "Low-Income Salaried",
+      "income_segment": "LOW",
+      "employment_type": "SALARIED",
+
+      "description": "Represents a salaried account holder in the low-income segment with relatively regular employment income and expenditure primarily focused on essential needs.",
+
+      "demographic_profile": {
+        "age_range": null,
+        "location_type": [
+          "URBAN",
+          "SEMI_URBAN",
+          "RURAL"
+        ]
+      },
+
+      "income_profile": {
+        "primary_income_type": "SALARY",
+        "regularity": "REGULAR",
+        "frequency": "MONTHLY",
+        "amount_distribution": null
+      },
+
+      "expense_profile": {
+        "housing": "ESSENTIAL",
+        "food": "ESSENTIAL",
+        "utilities": "ESSENTIAL",
+        "transport": "ESSENTIAL",
+        "debt": "POSSIBLE",
+        "discretionary": "LOW",
+        "investment": "LOW"
+      },
+
+      "transaction_profile": {
+        "SALARY": "MONTHLY",
+        "RENT": "MONTHLY_OR_REGULAR",
+        "GROCERIES": "FREQUENT",
+        "UTILITIES": "MONTHLY_OR_REGULAR",
+        "TRANSPORT": "FREQUENT",
+        "SHOPPING": "OCCASIONAL",
+        "INVESTMENT": "LOW_FREQUENCY"
+      },
+
+      "temporal_profile": {
+        "baseline_activity": "LOW_TO_MEDIUM",
+        "income_regularity": "HIGH",
+        "expected_clustering": "MEDIUM",
+        "seasonality": "TO_BE_CALIBRATED"
+      }
+    },
+
+    {
+      "archetype_id": "A2",
+      "name": "Middle-Income Salaried",
+      "income_segment": "MIDDLE",
+      "employment_type": "SALARIED",
+
+      "description": "Represents a salaried account holder in the middle-income segment with relatively regular monthly income and a mixture of recurring essential and discretionary expenditure.",
+
+      "demographic_profile": {
+        "age_range": null,
+        "location_type": [
+          "URBAN",
+          "SEMI_URBAN"
+        ]
+      },
+
+      "income_profile": {
+        "primary_income_type": "SALARY",
+        "regularity": "REGULAR",
+        "frequency": "MONTHLY",
+        "amount_distribution": null
+      },
+
+      "expense_profile": {
+        "housing": "REGULAR",
+        "food": "REGULAR",
+        "utilities": "REGULAR",
+        "transport": "REGULAR",
+        "debt": "POSSIBLE",
+        "discretionary": "MEDIUM",
+        "investment": "POSSIBLE"
+      },
+
+      "transaction_profile": {
+        "SALARY": "MONTHLY",
+        "RENT": "MONTHLY_OR_REGULAR",
+        "GROCERIES": "FREQUENT",
+        "UTILITIES": "MONTHLY_OR_REGULAR",
+        "TRANSPORT": "FREQUENT",
+        "EMI": "OPTIONAL_MONTHLY",
+        "SHOPPING": "OCCASIONAL",
+        "RESTAURANT": "OCCASIONAL",
+        "INVESTMENT": "OPTIONAL_REGULAR"
+      },
+
+      "temporal_profile": {
+        "baseline_activity": "MEDIUM",
+        "income_regularity": "HIGH",
+        "expected_clustering": "MEDIUM_TO_HIGH",
+        "seasonality": "TO_BE_CALIBRATED"
+      }
+    },
+
+    {
+      "archetype_id": "A3",
+      "name": "Middle-Income Self-Employed",
+      "income_segment": "MIDDLE",
+      "employment_type": "SELF_EMPLOYED",
+
+      "description": "Represents a self-employed account holder in the middle-income segment whose income may be more variable than a salaried customer and whose account can contain both business-related and personal financial activity.",
+
+      "demographic_profile": {
+        "age_range": null,
+        "location_type": [
+          "URBAN",
+          "SEMI_URBAN"
+        ]
+      },
+
+      "income_profile": {
+        "primary_income_type": "BUSINESS_RECEIPT",
+        "secondary_income_types": [
+          "OTHER_INCOME",
+          "REFUND"
+        ],
+        "regularity": "VARIABLE",
+        "frequency": "IRREGULAR",
+        "amount_distribution": null
+      },
+
+      "expense_profile": {
+        "housing": "REGULAR",
+        "food": "REGULAR",
+        "utilities": "REGULAR",
+        "transport": "VARIABLE",
+        "business_expenses": "VARIABLE",
+        "debt": "POSSIBLE",
+        "discretionary": "MEDIUM",
+        "investment": "POSSIBLE"
+      },
+
+      "transaction_profile": {
+        "BUSINESS_RECEIPT": "IRREGULAR",
+        "BUSINESS_EXPENSE": "VARIABLE",
+        "GROCERIES": "FREQUENT",
+        "UTILITIES": "REGULAR",
+        "TRANSPORT": "FREQUENT_OR_VARIABLE",
+        "RENT": "MONTHLY_OR_REGULAR",
+        "EMI": "OPTIONAL_MONTHLY",
+        "SHOPPING": "OCCASIONAL",
+        "CASH_WITHDRAWAL": "VARIABLE"
+      },
+
+      "temporal_profile": {
+        "baseline_activity": "MEDIUM_TO_HIGH",
+        "income_regularity": "LOW_TO_MEDIUM",
+        "expected_clustering": "MEDIUM_TO_HIGH",
+        "seasonality": "TO_BE_CALIBRATED"
+      }
+    }
+  ]
+}
