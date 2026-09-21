@@ -1,49 +1,118 @@
 {
     "A1": {
         "income": {
-            "min": 15000,
-            "max": 25000
+            "annual": {
+                "min": 180000,
+                "max": 300000
+            }
         },
         "expense_ratios": {
-            "housing": 0.25,
-            "food": 0.20,
-            "utilities": 0.08,
-            "transport": 0.08,
-            "debt": 0.08,
-            "discretionary": 0.07,
-            "investment": 0.04
+            "housing": {
+                "min": 0.20,
+                "max": 0.30
+            },
+            "food": {
+                "min": 0.15,
+                "max": 0.25
+            },
+            "utilities": {
+                "min": 0.06,
+                "max": 0.10
+            },
+            "transport": {
+                "min": 0.05,
+                "max": 0.10
+            },
+            "debt": {
+                "min": 0.00,
+                "max": 0.10
+            },
+            "discretionary": {
+                "min": 0.05,
+                "max": 0.10
+            },
+            "investment": {
+                "min": 0.02,
+                "max": 0.08
+            }
         }
     },
 
     "A2": {
         "income": {
-            "min": 25000,
-            "max": 60000
+            "annual": {
+                "min": 300000,
+                "max": 720000
+            }
         },
         "expense_ratios": {
-            "housing": 0.25,
-            "food": 0.15,
-            "utilities": 0.07,
-            "transport": 0.08,
-            "debt": 0.10,
-            "discretionary": 0.12,
-            "investment": 0.10
+            "housing": {
+                "min": 0.20,
+                "max": 0.30
+            },
+            "food": {
+                "min": 0.10,
+                "max": 0.20
+            },
+            "utilities": {
+                "min": 0.05,
+                "max": 0.10
+            },
+            "transport": {
+                "min": 0.05,
+                "max": 0.10
+            },
+            "debt": {
+                "min": 0.05,
+                "max": 0.15
+            },
+            "discretionary": {
+                "min": 0.08,
+                "max": 0.15
+            },
+            "investment": {
+                "min": 0.05,
+                "max": 0.15
+            }
         }
     },
 
     "A3": {
         "income": {
-            "min": 20000,
-            "max": 60000
+            "annual": {
+                "min": 240000,
+                "max": 720000
+            }
         },
         "expense_ratios": {
-            "housing": 0.20,
-            "food": 0.15,
-            "utilities": 0.07,
-            "transport": 0.10,
-            "debt": 0.08,
-            "discretionary": 0.10,
-            "investment": 0.05
+            "housing": {
+                "min": 0.15,
+                "max": 0.25
+            },
+            "food": {
+                "min": 0.10,
+                "max": 0.20
+            },
+            "utilities": {
+                "min": 0.05,
+                "max": 0.10
+            },
+            "transport": {
+                "min": 0.05,
+                "max": 0.12
+            },
+            "debt": {
+                "min": 0.03,
+                "max": 0.12
+            },
+            "discretionary": {
+                "min": 0.05,
+                "max": 0.15
+            },
+            "investment": {
+                "min": 0.02,
+                "max": 0.10
+            }
         }
     }
 }

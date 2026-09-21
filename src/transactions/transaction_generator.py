@@ -1,11 +1,20 @@
 import random
 from datetime import datetime, timedelta
 
+from src.temporal.hawkes_generator import HawkesGenerator
+
 
 class TransactionGenerator:
 
-    def __init__(self, seed=42):
+    def __init__(
+        self,
+        seed=42,
+        opening_balance=5000,
+        use_hawkes=True
+    ):
         self.random = random.Random(seed)
+        self.opening_balance = opening_balance
+        self.use_hawkes = use_hawkes
 
     def generate_transactions(
         self,
@@ -14,214 +23,467 @@ class TransactionGenerator:
         start_date,
         months=1
     ):
+        all_transactions = []
+
+        start_date = datetime.strptime(
+            start_date,
+            "%Y-%m-%d"
+        )
+
+        monthly_income = financial_profile["monthly_income"]
+        expenses = financial_profile["essential_expenses"]
+        debt = financial_profile["debt_burden"]
+        discretionary = financial_profile["discretionary_spending"]
+        investment = financial_profile["investment"]
+
+        for month_index in range(months):
+
+            month_start = self._add_months(
+                start_date,
+                month_index
+            )
+
+            monthly_transactions = self._generate_month(
+                customer=customer,
+                monthly_income=monthly_income,
+                expenses=expenses,
+                debt=debt,
+                discretionary=discretionary,
+                investment=investment,
+                month_start=month_start
+            )
+
+            all_transactions.extend(
+                monthly_transactions
+            )
+
+        # Sort all transactions chronologically
+        all_transactions.sort(
+            key=lambda x: x["timestamp"]
+        )
+
+        # Calculate running balance
+        self._add_running_balance(
+            all_transactions
+        )
+
+        return all_transactions
+
+    # ---------------------------------------------------------
+    # Generate one month
+    # ---------------------------------------------------------
+
+    def _generate_month(
+        self,
+        customer,
+        monthly_income,
+        expenses,
+        debt,
+        discretionary,
+        investment,
+        month_start
+    ):
 
         transactions = []
 
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
-
-        monthly_income = financial_profile["monthly_income"]
-        expenses = financial_profile["monthly_expenses"]
-
-        # ------------------------------------------------
-        # 1. Salary transaction
-        # ------------------------------------------------
+        # =====================================================
+        # 1. SALARY - REGULAR
+        # =====================================================
 
         salary_day = self.random.randint(1, 5)
 
-        salary_date = start_date + timedelta(days=salary_day - 1)
+        salary_date = (
+            month_start
+            + timedelta(days=salary_day - 1)
+            + timedelta(
+                hours=self.random.randint(8, 11),
+                minutes=self.random.randint(0, 59)
+            )
+        )
 
-        transactions.append({
-            "customer_id": customer["customer_id"],
-            "timestamp": salary_date.strftime("%Y-%m-%d"),
-            "transaction_type": "SALARY",
-            "category": "INCOME",
-            "credit_debit": "CREDIT",
-            "amount": round(monthly_income, 2),
-            "description": "Monthly salary"
-        })
+        transactions.append(
+            self._create_transaction(
+                customer=customer,
+                transaction_date=salary_date,
+                transaction_type="SALARY",
+                category="INCOME",
+                credit_debit="CREDIT",
+                amount=monthly_income,
+                description="Monthly salary"
+            )
+        )
 
-        # ------------------------------------------------
-        # 2. Rent
-        # ------------------------------------------------
+        # =====================================================
+        # 2. RECURRING EXPENSES
+        # =====================================================
+        # These do NOT use Hawkes.
+        # They have their own regular schedules.
 
-        rent_day = self.random.randint(1, 7)
+        # -------------------------
+        # RENT
+        # -------------------------
 
-        rent_date = start_date + timedelta(days=rent_day - 1)
+        rent_day = self.random.randint(3, 7)
 
-        transactions.append({
-            "customer_id": customer["customer_id"],
-            "timestamp": rent_date.strftime("%Y-%m-%d"),
-            "transaction_type": "RENT",
-            "category": "HOUSING",
-            "credit_debit": "DEBIT",
-            "amount": round(expenses["housing"], 2),
-            "description": "Monthly rent"
-        })
+        rent_date = (
+            month_start
+            + timedelta(days=rent_day - 1)
+            + timedelta(
+                hours=self.random.randint(9, 20),
+                minutes=self.random.randint(0, 59)
+            )
+        )
 
-        # ------------------------------------------------
-        # 3. Utilities
-        # ------------------------------------------------
+        transactions.append(
+            self._create_transaction(
+                customer=customer,
+                transaction_date=rent_date,
+                transaction_type="RENT",
+                category="HOUSING",
+                credit_debit="DEBIT",
+                amount=expenses["housing"],
+                description="Monthly rent"
+            )
+        )
 
-        utility_day = self.random.randint(5, 15)
+        # -------------------------
+        # UTILITIES
+        # -------------------------
 
-        utility_date = start_date + timedelta(days=utility_day - 1)
+        utility_day = self.random.randint(7, 15)
 
-        transactions.append({
-            "customer_id": customer["customer_id"],
-            "timestamp": utility_date.strftime("%Y-%m-%d"),
-            "transaction_type": "UTILITIES",
-            "category": "BILLS",
-            "credit_debit": "DEBIT",
-            "amount": round(expenses["utilities"], 2),
-            "description": "Utility bill payment"
-        })
+        utility_date = (
+            month_start
+            + timedelta(days=utility_day - 1)
+            + timedelta(
+                hours=self.random.randint(9, 20),
+                minutes=self.random.randint(0, 59)
+            )
+        )
 
-        # ------------------------------------------------
-        # 4. Food transactions
-        # ------------------------------------------------
+        transactions.append(
+            self._create_transaction(
+                customer=customer,
+                transaction_date=utility_date,
+                transaction_type="UTILITIES",
+                category="BILLS",
+                credit_debit="DEBIT",
+                amount=expenses["utilities"],
+                description="Utility bill payment"
+            )
+        )
 
-        food_total = expenses["food"]
+        # -------------------------
+        # EMI
+        # -------------------------
 
-        number_of_food_transactions = self.random.randint(8, 15)
+        if debt > 0:
+
+            emi_day = self.random.randint(10, 20)
+
+            emi_date = (
+                month_start
+                + timedelta(days=emi_day - 1)
+                + timedelta(
+                    hours=self.random.randint(9, 20),
+                    minutes=self.random.randint(0, 59)
+                )
+            )
+
+            transactions.append(
+                self._create_transaction(
+                    customer=customer,
+                    transaction_date=emi_date,
+                    transaction_type="EMI",
+                    category="DEBT",
+                    credit_debit="DEBIT",
+                    amount=debt,
+                    description="Loan EMI payment"
+                )
+            )
+
+        # -------------------------
+        # INVESTMENT
+        # -------------------------
+
+        if investment > 0:
+
+            investment_day = self.random.randint(5, 15)
+
+            investment_date = (
+                month_start
+                + timedelta(days=investment_day - 1)
+                + timedelta(
+                    hours=self.random.randint(9, 20),
+                    minutes=self.random.randint(0, 59)
+                )
+            )
+
+            transactions.append(
+                self._create_transaction(
+                    customer=customer,
+                    transaction_date=investment_date,
+                    transaction_type="INVESTMENT",
+                    category="INVESTMENT",
+                    credit_debit="DEBIT",
+                    amount=investment,
+                    description="Monthly investment"
+                )
+            )
+
+        # =====================================================
+        # 3. VARIABLE EXPENSES
+        # =====================================================
+        # Hawkes is used ONLY for these transactions.
+
+        variable_transactions = []
+
+        # -------------------------
+        # GROCERIES
+        # -------------------------
+
+        food_count = self.random.randint(8, 15)
 
         food_amounts = self._split_amount(
-            food_total,
-            number_of_food_transactions
+            expenses["food"],
+            food_count
         )
 
         for amount in food_amounts:
 
-            day = self.random.randint(1, 28)
+            variable_transactions.append(
+                self._create_template(
+                    transaction_type="GROCERIES",
+                    category="FOOD",
+                    credit_debit="DEBIT",
+                    amount=amount,
+                    description="Grocery purchase"
+                )
+            )
 
-            transaction_date = start_date + timedelta(days=day - 1)
+        # -------------------------
+        # TRANSPORT
+        # -------------------------
 
-            transactions.append({
-                "customer_id": customer["customer_id"],
-                "timestamp": transaction_date.strftime("%Y-%m-%d"),
-                "transaction_type": "GROCERIES",
-                "category": "FOOD",
-                "credit_debit": "DEBIT",
-                "amount": round(amount, 2),
-                "description": "Grocery purchase"
-            })
-
-        # ------------------------------------------------
-        # 5. Transport transactions
-        # ------------------------------------------------
-
-        transport_total = expenses["transport"]
-
-        number_of_transport_transactions = self.random.randint(8, 20)
+        transport_count = self.random.randint(8, 20)
 
         transport_amounts = self._split_amount(
-            transport_total,
-            number_of_transport_transactions
+            expenses["transport"],
+            transport_count
         )
 
         for amount in transport_amounts:
 
-            day = self.random.randint(1, 28)
-
-            transaction_date = start_date + timedelta(days=day - 1)
-
-            transactions.append({
-                "customer_id": customer["customer_id"],
-                "timestamp": transaction_date.strftime("%Y-%m-%d"),
-                "transaction_type": "TRANSPORT",
-                "category": "TRANSPORT",
-                "credit_debit": "DEBIT",
-                "amount": round(amount, 2),
-                "description": "Transport expense"
-            })
-
-        # ------------------------------------------------
-        # 6. Debt / EMI
-        # ------------------------------------------------
-
-        if expenses["debt"] > 0:
-
-            debt_day = self.random.randint(5, 20)
-
-            debt_date = start_date + timedelta(days=debt_day - 1)
-
-            transactions.append({
-                "customer_id": customer["customer_id"],
-                "timestamp": debt_date.strftime("%Y-%m-%d"),
-                "transaction_type": "EMI",
-                "category": "DEBT",
-                "credit_debit": "DEBIT",
-                "amount": round(expenses["debt"], 2),
-                "description": "Loan EMI payment"
-            })
-
-        # ------------------------------------------------
-        # 7. Discretionary spending
-        # ------------------------------------------------
-
-        discretionary_total = expenses["discretionary"]
-
-        number_of_discretionary_transactions = self.random.randint(2, 6)
-
-        discretionary_amounts = self._split_amount(
-            discretionary_total,
-            number_of_discretionary_transactions
-        )
-
-        for amount in discretionary_amounts:
-
-            day = self.random.randint(1, 28)
-
-            transaction_date = start_date + timedelta(days=day - 1)
-
-            transactions.append({
-                "customer_id": customer["customer_id"],
-                "timestamp": transaction_date.strftime("%Y-%m-%d"),
-                "transaction_type": "SHOPPING",
-                "category": "DISCRETIONARY",
-                "credit_debit": "DEBIT",
-                "amount": round(amount, 2),
-                "description": "Discretionary purchase"
-            })
-
-        # ------------------------------------------------
-        # 8. Investment
-        # ------------------------------------------------
-
-        investment = financial_profile["monthly_investment"]
-
-        if investment > 0:
-
-            investment_day = self.random.randint(10, 25)
-
-            investment_date = (
-                start_date + timedelta(days=investment_day - 1)
+            variable_transactions.append(
+                self._create_template(
+                    transaction_type="TRANSPORT",
+                    category="TRANSPORT",
+                    credit_debit="DEBIT",
+                    amount=amount,
+                    description="Transport expense"
+                )
             )
 
-            transactions.append({
-                "customer_id": customer["customer_id"],
-                "timestamp": investment_date.strftime("%Y-%m-%d"),
-                "transaction_type": "INVESTMENT",
-                "category": "INVESTMENT",
-                "credit_debit": "DEBIT",
-                "amount": round(investment, 2),
-                "description": "Monthly investment"
-            })
+        # -------------------------
+        # SHOPPING
+        # -------------------------
 
-        # ------------------------------------------------
-        # Sort transactions by date
-        # ------------------------------------------------
+        shopping_count = self.random.randint(2, 6)
 
-        transactions.sort(
-            key=lambda x: x["timestamp"]
+        shopping_amounts = self._split_amount(
+            discretionary,
+            shopping_count
         )
+
+        for amount in shopping_amounts:
+
+            variable_transactions.append(
+                self._create_template(
+                    transaction_type="SHOPPING",
+                    category="DISCRETIONARY",
+                    credit_debit="DEBIT",
+                    amount=amount,
+                    description="Discretionary purchase"
+                )
+            )
+
+        # =====================================================
+        # 4. SHUFFLE VARIABLE TRANSACTIONS
+        # =====================================================
+
+        self.random.shuffle(
+            variable_transactions
+        )
+
+        # =====================================================
+        # 5. GENERATE HAWKES TIMESTAMPS
+        # =====================================================
+
+        timestamps = self._generate_hawkes_timestamps(
+            month_start=month_start,
+            number_of_transactions=len(
+                variable_transactions
+            )
+        )
+
+        # =====================================================
+        # 6. ASSIGN HAWKES TIMESTAMPS
+        # =====================================================
+
+        for template, timestamp in zip(
+            variable_transactions,
+            timestamps
+        ):
+
+            transactions.append(
+                self._create_transaction(
+                    customer=customer,
+                    transaction_date=timestamp,
+                    transaction_type=template["transaction_type"],
+                    category=template["category"],
+                    credit_debit=template["credit_debit"],
+                    amount=template["amount"],
+                    description=template["description"]
+                )
+            )
 
         return transactions
 
-    # ----------------------------------------------------
-    # Helper function
-    # ----------------------------------------------------
+    # =========================================================
+    # Create transaction template
+    # =========================================================
 
-    def _split_amount(self, total_amount, number_of_transactions):
+    def _create_template(
+        self,
+        transaction_type,
+        category,
+        credit_debit,
+        amount,
+        description
+    ):
+        return {
+            "transaction_type": transaction_type,
+            "category": category,
+            "credit_debit": credit_debit,
+            "amount": amount,
+            "description": description
+        }
+
+    # =========================================================
+    # Hawkes timestamps for variable expenses
+    # =========================================================
+
+    def _generate_hawkes_timestamps(
+        self,
+        month_start,
+        number_of_transactions
+    ):
+
+        if number_of_transactions == 0:
+            return []
+
+        if self.use_hawkes:
+
+            hawkes = HawkesGenerator(
+                baseline_rate=0.5,
+                alpha=0.8,
+                beta=1.5,
+                seed=self.random.randint(
+                    1,
+                    1000000
+                )
+            )
+
+            events = hawkes.generate_events(
+                duration_days=30,
+                max_events=100
+            )
+
+            # If Hawkes produces fewer events,
+            # generate additional random events.
+            if len(events) < number_of_transactions:
+
+                extra_events = (
+                    self._generate_random_event_times(
+                        number_of_transactions
+                        - len(events)
+                    )
+                )
+
+                events.extend(extra_events)
+
+        else:
+
+            events = self._generate_random_event_times(
+                number_of_transactions
+            )
+
+        # Keep required number of timestamps
+        events = events[:number_of_transactions]
+
+        timestamps = []
+
+        for event_time in events:
+
+            timestamp = (
+                month_start
+                + timedelta(days=event_time)
+            )
+
+            timestamps.append(timestamp)
+
+        timestamps.sort()
+
+        return timestamps
+
+    # =========================================================
+    # Random timestamps - fallback / baseline
+    # =========================================================
+
+    def _generate_random_event_times(
+        self,
+        count
+    ):
+        return [
+            self.random.uniform(0, 29)
+            for _ in range(count)
+        ]
+
+    # =========================================================
+    # Create final transaction
+    # =========================================================
+
+    def _create_transaction(
+        self,
+        customer,
+        transaction_date,
+        transaction_type,
+        category,
+        credit_debit,
+        amount,
+        description
+    ):
+        return {
+            "customer_id": customer["customer_id"],
+            "timestamp": transaction_date.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            "transaction_type": transaction_type,
+            "category": category,
+            "credit_debit": credit_debit,
+            "amount": round(amount, 2),
+            "description": description
+        }
+
+    # =========================================================
+    # Split one expense into multiple transactions
+    # =========================================================
+
+    def _split_amount(
+        self,
+        total_amount,
+        number_of_transactions
+    ):
 
         weights = [
             self.random.uniform(0.5, 1.5)
@@ -236,3 +498,50 @@ class TransactionGenerator:
         ]
 
         return amounts
+
+    # =========================================================
+    # Running balance
+    # =========================================================
+
+    def _add_running_balance(
+        self,
+        transactions
+    ):
+
+        balance = self.opening_balance
+
+        for transaction in transactions:
+
+            if transaction["credit_debit"] == "CREDIT":
+
+                balance += transaction["amount"]
+
+            else:
+
+                balance -= transaction["amount"]
+
+            transaction["balance"] = round(
+                balance,
+                2
+            )
+
+    # =========================================================
+    # Add months
+    # =========================================================
+
+    def _add_months(
+        self,
+        date,
+        months
+    ):
+
+        month = date.month - 1 + months
+
+        year = date.year + month // 12
+
+        month = month % 12 + 1
+
+        return date.replace(
+            year=year,
+            month=month
+        )

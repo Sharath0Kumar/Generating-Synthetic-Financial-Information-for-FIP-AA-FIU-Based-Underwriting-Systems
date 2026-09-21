@@ -24,52 +24,131 @@ class FinancialProfileGenerator:
 
         archetype_parameters = self.parameters[archetype_id]
 
-        # Generate individual monthly income
-        income_range = archetype_parameters["income"]
+        # -------------------------------------------------
+        # 1. Generate annual income
+        # -------------------------------------------------
 
-        monthly_income = self.random.randint(
+        income_range = archetype_parameters["income"]["annual"]
+
+        annual_income = self.random.randint(
             income_range["min"],
             income_range["max"]
         )
 
-        # Get expense ratios
+        # -------------------------------------------------
+        # 2. Convert annual income to monthly income
+        # -------------------------------------------------
+
+        monthly_income = annual_income / 12
+
+        # -------------------------------------------------
+        # 3. Generate variable expense ratios
+        # -------------------------------------------------
+
         ratios = archetype_parameters["expense_ratios"]
 
-        housing = monthly_income * ratios["housing"]
-        food = monthly_income * ratios["food"]
-        utilities = monthly_income * ratios["utilities"]
-        transport = monthly_income * ratios["transport"]
-        debt = monthly_income * ratios["debt"]
-        discretionary = monthly_income * ratios["discretionary"]
-        investment = monthly_income * ratios["investment"]
+        housing_ratio = self.random.uniform(
+            ratios["housing"]["min"],
+            ratios["housing"]["max"]
+        )
 
-        total_expenses = (
+        food_ratio = self.random.uniform(
+            ratios["food"]["min"],
+            ratios["food"]["max"]
+        )
+
+        utilities_ratio = self.random.uniform(
+            ratios["utilities"]["min"],
+            ratios["utilities"]["max"]
+        )
+
+        transport_ratio = self.random.uniform(
+            ratios["transport"]["min"],
+            ratios["transport"]["max"]
+        )
+
+        debt_ratio = self.random.uniform(
+            ratios["debt"]["min"],
+            ratios["debt"]["max"]
+        )
+
+        discretionary_ratio = self.random.uniform(
+            ratios["discretionary"]["min"],
+            ratios["discretionary"]["max"]
+        )
+
+        investment_ratio = self.random.uniform(
+            ratios["investment"]["min"],
+            ratios["investment"]["max"]
+        )
+
+        # -------------------------------------------------
+        # 4. Calculate individual expenses
+        # -------------------------------------------------
+
+        housing = monthly_income * housing_ratio
+        food = monthly_income * food_ratio
+        utilities = monthly_income * utilities_ratio
+        transport = monthly_income * transport_ratio
+
+        debt = monthly_income * debt_ratio
+
+        discretionary = monthly_income * discretionary_ratio
+
+        investment = monthly_income * investment_ratio
+
+        # -------------------------------------------------
+        # 5. Calculate essential expenses
+        # -------------------------------------------------
+
+        essential_expenses = (
             housing
             + food
             + utilities
             + transport
-            + debt
-            + discretionary
         )
 
-        savings = monthly_income - total_expenses - investment
+        # -------------------------------------------------
+        # 6. Calculate savings
+        # -------------------------------------------------
 
-        financial_profile = {
+        savings = (
+            monthly_income
+            - essential_expenses
+            - debt
+            - discretionary
+            - investment
+        )
+
+        # -------------------------------------------------
+        # 7. Return compact financial profile
+        # -------------------------------------------------
+
+        return {
             "customer_id": customer["customer_id"],
             "archetype_id": archetype_id,
+
+            "annual_income": annual_income,
+
             "monthly_income": round(monthly_income, 2),
 
-            "monthly_expenses": {
+            "essential_expenses": {
+                "total": round(essential_expenses, 2),
                 "housing": round(housing, 2),
                 "food": round(food, 2),
                 "utilities": round(utilities, 2),
-                "transport": round(transport, 2),
-                "debt": round(debt, 2),
-                "discretionary": round(discretionary, 2)
+                "transport": round(transport, 2)
             },
 
-            "monthly_investment": round(investment, 2),
-            "estimated_monthly_savings": round(savings, 2)
-        }
+            "debt_burden": round(debt, 2),
 
-        return financial_profile
+            "discretionary_spending": round(
+                discretionary, 2
+            ),
+
+            "savings": round(savings, 2),
+
+            # Kept internally because the transaction
+            # generator still needs investment information.
+            "investment": round(investment, 2)
+        }
