@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from src.temporal.hawkes_generator import HawkesGenerator
 
-#Transactions
+#Transactions Generator
 class TransactionGenerator:
 
     def __init__(
