@@ -36,6 +36,7 @@ class TransactionGenerator:
         discretionary = financial_profile["discretionary_spending"]
         investment = financial_profile["investment"]
 
+        # Generate transactions month by month
         for month_index in range(months):
 
             month_start = self._add_months(
@@ -67,11 +68,35 @@ class TransactionGenerator:
             all_transactions
         )
 
-        return all_transactions
+        # ---------------------------------------------------------
+        # ACCOUNT-LEVEL OPENING AND CLOSING BALANCE
+        # ---------------------------------------------------------
 
-    # ---------------------------------------------------------
-    # Generate one month
-    # ---------------------------------------------------------
+        # Balance before the first transaction
+        opening_balance = self.opening_balance
+
+        # Balance after the final transaction
+        if all_transactions:
+            closing_balance = all_transactions[-1]["balance"]
+        else:
+            closing_balance = opening_balance
+
+        return {
+            "customer_id": customer["customer_id"],
+            "opening_balance": round(
+                opening_balance,
+                2
+            ),
+            "transactions": all_transactions,
+            "closing_balance": round(
+                closing_balance,
+                2
+            )
+        }
+
+    # =========================================================
+    # GENERATE ONE MONTH
+    # =========================================================
 
     def _generate_month(
         self,
@@ -83,11 +108,10 @@ class TransactionGenerator:
         investment,
         month_start
     ):
-
         transactions = []
 
         # =====================================================
-        # 1. SALARY - REGULAR
+        # SALARY - REGULAR
         # =====================================================
 
         salary_day = self.random.randint(1, 5)
@@ -114,14 +138,8 @@ class TransactionGenerator:
         )
 
         # =====================================================
-        # 2. RECURRING EXPENSES
+        # RENT - RECURRING
         # =====================================================
-        # These do NOT use Hawkes.
-        # They have their own regular schedules.
-
-        # -------------------------
-        # RENT
-        # -------------------------
 
         rent_day = self.random.randint(3, 7)
 
@@ -146,9 +164,9 @@ class TransactionGenerator:
             )
         )
 
-        # -------------------------
-        # UTILITIES
-        # -------------------------
+        # =====================================================
+        # UTILITIES - RECURRING
+        # =====================================================
 
         utility_day = self.random.randint(7, 15)
 
@@ -173,9 +191,9 @@ class TransactionGenerator:
             )
         )
 
-        # -------------------------
-        # EMI
-        # -------------------------
+        # =====================================================
+        # EMI - RECURRING
+        # =====================================================
 
         if debt > 0:
 
@@ -202,9 +220,9 @@ class TransactionGenerator:
                 )
             )
 
-        # -------------------------
-        # INVESTMENT
-        # -------------------------
+        # =====================================================
+        # INVESTMENT - RECURRING
+        # =====================================================
 
         if investment > 0:
 
@@ -232,15 +250,15 @@ class TransactionGenerator:
             )
 
         # =====================================================
-        # 3. VARIABLE EXPENSES
+        # VARIABLE EXPENSES
+        # HAWKES CONTROLS THEIR TIMING
         # =====================================================
-        # Hawkes is used ONLY for these transactions.
 
         variable_transactions = []
 
-        # -------------------------
+        # -----------------------------------------------------
         # GROCERIES
-        # -------------------------
+        # -----------------------------------------------------
 
         food_count = self.random.randint(8, 15)
 
@@ -261,9 +279,9 @@ class TransactionGenerator:
                 )
             )
 
-        # -------------------------
+        # -----------------------------------------------------
         # TRANSPORT
-        # -------------------------
+        # -----------------------------------------------------
 
         transport_count = self.random.randint(8, 20)
 
@@ -284,9 +302,9 @@ class TransactionGenerator:
                 )
             )
 
-        # -------------------------
-        # SHOPPING
-        # -------------------------
+        # -----------------------------------------------------
+        # SHOPPING / DISCRETIONARY
+        # -----------------------------------------------------
 
         shopping_count = self.random.randint(2, 6)
 
@@ -307,18 +325,12 @@ class TransactionGenerator:
                 )
             )
 
-        # =====================================================
-        # 4. SHUFFLE VARIABLE TRANSACTIONS
-        # =====================================================
-
+        # Shuffle variable transactions
         self.random.shuffle(
             variable_transactions
         )
 
-        # =====================================================
-        # 5. GENERATE HAWKES TIMESTAMPS
-        # =====================================================
-
+        # Generate Hawkes timestamps
         timestamps = self._generate_hawkes_timestamps(
             month_start=month_start,
             number_of_transactions=len(
@@ -326,10 +338,7 @@ class TransactionGenerator:
             )
         )
 
-        # =====================================================
-        # 6. ASSIGN HAWKES TIMESTAMPS
-        # =====================================================
-
+        # Assign timestamps to variable transactions
         for template, timestamp in zip(
             variable_transactions,
             timestamps
@@ -339,18 +348,28 @@ class TransactionGenerator:
                 self._create_transaction(
                     customer=customer,
                     transaction_date=timestamp,
-                    transaction_type=template["transaction_type"],
-                    category=template["category"],
-                    credit_debit=template["credit_debit"],
-                    amount=template["amount"],
-                    description=template["description"]
+                    transaction_type=template[
+                        "transaction_type"
+                    ],
+                    category=template[
+                        "category"
+                    ],
+                    credit_debit=template[
+                        "credit_debit"
+                    ],
+                    amount=template[
+                        "amount"
+                    ],
+                    description=template[
+                        "description"
+                    ]
                 )
             )
 
         return transactions
 
     # =========================================================
-    # Create transaction template
+    # TRANSACTION TEMPLATE
     # =========================================================
 
     def _create_template(
@@ -370,7 +389,7 @@ class TransactionGenerator:
         }
 
     # =========================================================
-    # Hawkes timestamps for variable expenses
+    # HAWKES TIMESTAMPS
     # =========================================================
 
     def _generate_hawkes_timestamps(
@@ -378,7 +397,6 @@ class TransactionGenerator:
         month_start,
         number_of_transactions
     ):
-
         if number_of_transactions == 0:
             return []
 
@@ -399,8 +417,8 @@ class TransactionGenerator:
                 max_events=100
             )
 
-            # If Hawkes produces fewer events,
-            # generate additional random events.
+            # If Hawkes generates fewer events,
+            # generate additional random timestamps.
             if len(events) < number_of_transactions:
 
                 extra_events = (
@@ -410,16 +428,21 @@ class TransactionGenerator:
                     )
                 )
 
-                events.extend(extra_events)
+                events.extend(
+                    extra_events
+                )
 
         else:
 
-            events = self._generate_random_event_times(
-                number_of_transactions
+            events = (
+                self._generate_random_event_times(
+                    number_of_transactions
+                )
             )
 
-        # Keep required number of timestamps
-        events = events[:number_of_transactions]
+        events = events[
+            :number_of_transactions
+        ]
 
         timestamps = []
 
@@ -430,14 +453,16 @@ class TransactionGenerator:
                 + timedelta(days=event_time)
             )
 
-            timestamps.append(timestamp)
+            timestamps.append(
+                timestamp
+            )
 
         timestamps.sort()
 
         return timestamps
 
     # =========================================================
-    # Random timestamps - fallback / baseline
+    # RANDOM EVENT TIMES
     # =========================================================
 
     def _generate_random_event_times(
@@ -445,12 +470,15 @@ class TransactionGenerator:
         count
     ):
         return [
-            self.random.uniform(0, 29)
+            self.random.uniform(
+                0,
+                29
+            )
             for _ in range(count)
         ]
 
     # =========================================================
-    # Create final transaction
+    # CREATE TRANSACTION
     # =========================================================
 
     def _create_transaction(
@@ -464,19 +492,24 @@ class TransactionGenerator:
         description
     ):
         return {
-            "customer_id": customer["customer_id"],
+            "customer_id": customer[
+                "customer_id"
+            ],
             "timestamp": transaction_date.strftime(
                 "%Y-%m-%d %H:%M:%S"
             ),
             "transaction_type": transaction_type,
             "category": category,
             "credit_debit": credit_debit,
-            "amount": round(amount, 2),
+            "amount": round(
+                amount,
+                2
+            ),
             "description": description
         }
 
     # =========================================================
-    # Split one expense into multiple transactions
+    # SPLIT TOTAL AMOUNT
     # =========================================================
 
     def _split_amount(
@@ -484,41 +517,53 @@ class TransactionGenerator:
         total_amount,
         number_of_transactions
     ):
-
         weights = [
-            self.random.uniform(0.5, 1.5)
-            for _ in range(number_of_transactions)
+            self.random.uniform(
+                0.5,
+                1.5
+            )
+            for _ in range(
+                number_of_transactions
+            )
         ]
 
-        weight_sum = sum(weights)
+        weight_sum = sum(
+            weights
+        )
 
         amounts = [
-            total_amount * weight / weight_sum
+            total_amount
+            * weight
+            / weight_sum
             for weight in weights
         ]
 
         return amounts
 
     # =========================================================
-    # Running balance
+    # RUNNING BALANCE
     # =========================================================
 
     def _add_running_balance(
         self,
         transactions
     ):
-
         balance = self.opening_balance
 
         for transaction in transactions:
 
-            if transaction["credit_debit"] == "CREDIT":
-
-                balance += transaction["amount"]
+            if (
+                transaction["credit_debit"]
+                == "CREDIT"
+            ):
+                balance += transaction[
+                    "amount"
+                ]
 
             else:
-
-                balance -= transaction["amount"]
+                balance -= transaction[
+                    "amount"
+                ]
 
             transaction["balance"] = round(
                 balance,
@@ -526,7 +571,65 @@ class TransactionGenerator:
             )
 
     # =========================================================
-    # Add months
+    # BALANCE VALIDATION
+    # =========================================================
+
+    def validate_balance(
+        self,
+        account_data
+    ):
+        opening_balance = (
+            account_data[
+                "opening_balance"
+            ]
+        )
+
+        transactions = (
+            account_data[
+                "transactions"
+            ]
+        )
+
+        closing_balance = (
+            account_data[
+                "closing_balance"
+            ]
+        )
+
+        total_credits = sum(
+            transaction["amount"]
+            for transaction in transactions
+            if transaction[
+                "credit_debit"
+            ] == "CREDIT"
+        )
+
+        total_debits = sum(
+            transaction["amount"]
+            for transaction in transactions
+            if transaction[
+                "credit_debit"
+            ] == "DEBIT"
+        )
+
+        calculated_closing_balance = (
+            opening_balance
+            + total_credits
+            - total_debits
+        )
+
+        calculated_closing_balance = round(
+            calculated_closing_balance,
+            2
+        )
+
+        return (
+            calculated_closing_balance
+            == closing_balance
+        )
+
+    # =========================================================
+    # ADD MONTHS
     # =========================================================
 
     def _add_months(
@@ -534,12 +637,21 @@ class TransactionGenerator:
         date,
         months
     ):
+        month = (
+            date.month
+            - 1
+            + months
+        )
 
-        month = date.month - 1 + months
+        year = (
+            date.year
+            + month // 12
+        )
 
-        year = date.year + month // 12
-
-        month = month % 12 + 1
+        month = (
+            month % 12
+            + 1
+        )
 
         return date.replace(
             year=year,

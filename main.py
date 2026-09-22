@@ -1,27 +1,31 @@
 from src.archetypes.archetype_engine import ArchetypeEngine
 from src.archetypes.customer_generator import CustomerGenerator
-from src.archetypes.financial_profile_generator import FinancialProfileGenerator
-from src.transactions.transaction_generator import TransactionGenerator
-from src.llm.semantic_enricher import SemanticEnricher
+from src.archetypes.financial_profile_generator import (
+    FinancialProfileGenerator
+)
+from src.transactions.transaction_generator import (
+    TransactionGenerator
+)
 
 
-# ============================================================
-# 1. ARCHETYPE ENGINE
-# ============================================================
+# =========================================================
+# ARCHETYPE ENGINE
+# =========================================================
 
 engine = ArchetypeEngine(
     "config/archetypes.json"
 )
 
 
-# ============================================================
-# 2. CUSTOMER GENERATOR
-# ============================================================
+# =========================================================
+# CUSTOMER GENERATOR
+# =========================================================
 
 customer_generator = CustomerGenerator(
     archetype_engine=engine,
     seed=42
 )
+
 
 customers = customer_generator.generate_customers(
     archetype_id="A1",
@@ -29,9 +33,9 @@ customers = customer_generator.generate_customers(
 )
 
 
-# ============================================================
-# 3. FINANCIAL PROFILE GENERATOR
-# ============================================================
+# =========================================================
+# FINANCIAL PROFILE GENERATOR
+# =========================================================
 
 financial_generator = FinancialProfileGenerator(
     parameter_path="config/archetype_parameters.json",
@@ -39,9 +43,9 @@ financial_generator = FinancialProfileGenerator(
 )
 
 
-# ============================================================
-# 4. TRANSACTION GENERATOR
-# ============================================================
+# =========================================================
+# TRANSACTION GENERATOR
+# =========================================================
 
 transaction_generator = TransactionGenerator(
     seed=42,
@@ -50,54 +54,36 @@ transaction_generator = TransactionGenerator(
 )
 
 
-# ============================================================
-# 5. SEMANTIC ENRICHER
-# ============================================================
-
-semantic_enricher = SemanticEnricher(
-    seed=42
-)
-
-
-# ============================================================
-# 6. GENERATE CUSTOMER DATA
-# ============================================================
+# =========================================================
+# GENERATE DATA
+# =========================================================
 
 for customer in customers:
 
-    # --------------------------------------------------------
-    # Generate financial profile
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # Generate Financial Profile
+    # -----------------------------------------------------
 
     profile = financial_generator.generate_profile(
         customer
     )
 
-    # --------------------------------------------------------
-    # Generate transaction history
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # Generate Transactions
+    # -----------------------------------------------------
 
-    transactions = transaction_generator.generate_transactions(
-        customer=customer,
-        financial_profile=profile,
-        start_date="2026-01-01",
-        months=3
-    )
-
-    # --------------------------------------------------------
-    # Add semantic information
-    # --------------------------------------------------------
-
-    enriched_transactions = (
-        semantic_enricher.enrich_transactions(
-            transactions
+    account_data = (
+        transaction_generator.generate_transactions(
+            customer=customer,
+            financial_profile=profile,
+            start_date="2026-01-01",
+            months=3
         )
     )
 
-
-    # ========================================================
-    # DISPLAY CUSTOMER
-    # ========================================================
+    # =====================================================
+    # CUSTOMER
+    # =====================================================
 
     print("\n" + "=" * 70)
     print("CUSTOMER")
@@ -105,10 +91,9 @@ for customer in customers:
 
     print(customer)
 
-
-    # ========================================================
-    # DISPLAY FINANCIAL PROFILE
-    # ========================================================
+    # =====================================================
+    # FINANCIAL PROFILE
+    # =====================================================
 
     print("\n" + "=" * 70)
     print("FINANCIAL PROFILE")
@@ -116,14 +101,44 @@ for customer in customers:
 
     print(profile)
 
+    # =====================================================
+    # OPENING BALANCE
+    # =====================================================
 
-    # ========================================================
-    # DISPLAY ENRICHED TRANSACTIONS
-    # ========================================================
+    print("\nOpening Balance:", end=" ")
+    print(
+        f"{account_data['opening_balance']:.0f}"
+    )
 
-    print("\n" + "=" * 70)
-    print("ENRICHED TRANSACTIONS")
-    print("=" * 70)
+    # =====================================================
+    # TRANSACTIONS
+    # =====================================================
 
-    for transaction in enriched_transactions:
+    print("\nTRANSACTIONS")
+
+    for transaction in account_data["transactions"]:
         print(transaction)
+
+    # =====================================================
+    # CLOSING BALANCE
+    # =====================================================
+
+    print("\nClosing Balance:", end=" ")
+    print(
+        f"{account_data['closing_balance']:.2f}"
+    )
+
+    # =====================================================
+    # BALANCE VALIDATION
+    # =====================================================
+
+    balance_valid = (
+        transaction_generator.validate_balance(
+            account_data
+        )
+    )
+
+    print(
+        "Balance Validation:",
+        balance_valid
+    )
